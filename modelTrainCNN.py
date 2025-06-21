@@ -9,7 +9,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
 
 # Ruta a imágenes
-image_dir = "ruta/a/imagenes_filtrada_gaussian_blur"  # ← CAMBIA esta ruta
+image_dir = "imagenes_filtradas/imagenes_filtrada_gaussian_blur"
 
 # Diccionario clases
 label_map = {
