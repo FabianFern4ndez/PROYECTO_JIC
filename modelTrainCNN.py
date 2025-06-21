@@ -39,7 +39,7 @@ for fname in os.listdir(image_dir):
 print(f"Total imágenes cargadas: {len(X)}")
 
 # Limitar el número de imágenes para evitar problemas de memoria
-MAX_IMAGES = 1000 # Ajusta este valor según tu memoria disponible
+MAX_IMAGES = 5000 # Ajusta este valor según tu memoria disponible
 X = X[:MAX_IMAGES]
 y = y[:MAX_IMAGES]
 
