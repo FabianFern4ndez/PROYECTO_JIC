@@ -9,17 +9,17 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report
 
 # Ruta a imágenes
-image_dir = "imagenes_filtradas/imagenes_filtrada_gaussian_blur"
+image_dir = "ruta/a/imagenes_filtrada_gaussian_blur"  # ← CAMBIA esta ruta
 
 # Diccionario clases
 label_map = {
-    '0': 'sinDemencia',
-    '1': 'leveDemencia',
-    '2': 'mediaDemencia',
-    '3': 'moderadaDemencia'
+    '0': 'NonDemented',
+    '1': 'VeryMildDemented',
+    '2': 'MildDemented',
+    '3': 'ModerateDemented'
 }
 
-# Carga y preprocesamiento
+# Cargar imágenes y etiquetas
 X = []
 y = []
 
@@ -29,15 +29,22 @@ for fname in os.listdir(image_dir):
             label_num = fname.split('_')[-1].split('.')[0]
             label = label_map.get(label_num)
             if label:
-                img_path = os.path.join(image_dir, fname)
-                img = Image.open(img_path).convert("L").resize((128, 128))
-                X.append(np.array(img) / 255.0)  # Normalizar
+                path = os.path.join(image_dir, fname)
+                img = Image.open(path).convert("L").resize((64, 64))  # Reducido a 64x64
+                X.append(np.array(img) / 255.0)
                 y.append(label)
         except Exception as e:
-            print(f"Error en {fname}: {e}")
+            print(f"No se pudo procesar {fname}: {e}")
+
+print(f"Total imágenes cargadas: {len(X)}")
+
+# Limitar el número de imágenes para evitar problemas de memoria
+MAX_IMAGES = 500 # Ajusta este valor según tu memoria disponible
+X = X[:MAX_IMAGES]
+y = y[:MAX_IMAGES]
 
 # Convertir a arrays
-X = np.array(X).reshape(-1, 128, 128, 1)
+X = np.array(X).reshape(-1, 64, 64, 1)
 le = LabelEncoder()
 y_encoded = le.fit_transform(y)
 y_categorical = to_categorical(y_encoded)
@@ -45,22 +52,22 @@ y_categorical = to_categorical(y_encoded)
 # Separar datos
 X_train, X_test, y_train, y_test = train_test_split(X, y_categorical, test_size=0.2, random_state=42)
 
-# Modelo CNN
+# Modelo CNN simple
 model = Sequential([
-    Conv2D(32, (3, 3), activation='relu', input_shape=(128, 128, 1)),
+    Conv2D(16, (3, 3), activation='relu', input_shape=(64, 64, 1)),
     MaxPooling2D((2, 2)),
-    Conv2D(64, (3, 3), activation='relu'),
+    Conv2D(32, (3, 3), activation='relu'),
     MaxPooling2D((2, 2)),
     Flatten(),
-    Dense(128, activation='relu'),
+    Dense(64, activation='relu'),
     Dropout(0.3),
     Dense(4, activation='softmax')
 ])
 
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-model.fit(X_train, y_train, epochs=10, batch_size=32, validation_split=0.1)
+model.fit(X_train, y_train, epochs=10, batch_size=8, validation_split=0.1)
 
-# Evaluar modelo
+# Evaluar
 y_pred = model.predict(X_test)
 y_pred_labels = le.inverse_transform(np.argmax(y_pred, axis=1))
 y_true_labels = le.inverse_transform(np.argmax(y_test, axis=1))
@@ -68,11 +75,11 @@ y_true_labels = le.inverse_transform(np.argmax(y_test, axis=1))
 print("\n=== Reporte de Clasificación ===")
 print(classification_report(y_true_labels, y_pred_labels))
 
-# Guardar predicciones en archivo ARFF
+# Exportar predicciones en formato ARFF
 arff_file = "cnn_alzheimer_predictions.arff"
 with open(arff_file, 'w') as f:
     f.write("@RELATION cnn_alzheimer_prediction\n\n")
-    for i in range(128*128):
+    for i in range(64 * 64):
         f.write(f"@ATTRIBUTE pixel{i} REAL\n")
     f.write("@ATTRIBUTE class {NonDemented,VeryMildDemented,MildDemented,ModerateDemented}\n\n")
     f.write("@DATA\n")
